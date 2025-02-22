@@ -43,7 +43,6 @@ body {
   padding: 20px;
   text-align: center;
   position: relative;
-  
   background-color: rgba(0, 0, 0, 0.5);
 }
 
@@ -186,4 +185,18 @@ input[type="checkbox"] {
 
 .toggle-container input[type="checkbox"]:checked::before {
   transform: translateX(20px);
+}
+
+/* Media Query for screens smaller than 485px */
+@media (max-width: 485px) {
+  /* Reduce header title size */
+  .header h1 {
+    font-size: 1.5em;
+  }
+
+  /* Reduce nav link font size and margin to prevent wrapping */
+  .nav a {
+    font-size: 0.8em;
+    margin: 0 8px;
+  }
 }

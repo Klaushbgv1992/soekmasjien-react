@@ -15,7 +15,7 @@
     flex-grow: 1;
     overflow-y: auto;
     word-wrap: break-word;
-    white-space: pre-wrap; /* Preserves formatting */
+    white-space: pre-wrap;
     line-height: 1.5;
     transition: max-height 0.3s ease;
   }
@@ -41,62 +41,20 @@
   .chat-input {
     display: flex;
     align-items: center;
-    gap: 1x;
+    gap: 10px;
     background: #363535;
     padding: 10px;
-    border-radius: 50px;
+    border-radius: 5px;
     justify-content: space-between;
   }
   
-  .send-icon img, .microphone-icon img {
-    width: 24px;
-    height: 24px;
-  }
-  
-  .microphone-icon.recording {
-    border: 3px solid yellow;
-  }
-  
-  .microphone-icon:hover {
-    background-color: #0056b3;
-  }
-  
-  label {
-    margin-left: 10px;
-    color: white;
-    font-size: 0.9em;
-  }
-  
-  input[type="checkbox"] {
-    margin-right: 5px;
-    vertical-align: middle;
-  }
-  
-  input[type="text"] {
-    flex: 5;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 50px;
-    background: #4a4a4a;
-    color: white;
-    font-size: 16px;
-  }
-  
-  input[type="text"]:focus {
-    outline: none;
-    background: #555;
-  }
-  
-  input[type="text"]:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-  
-  .send-icon, .microphone-icon {
-    width: 50px; /* Adjust button size */
+  /* Default (desktop) buttons */
+  .send-icon,
+  .microphone-icon {
+    width: 50px;
     height: 50px;
-    border-radius: 50%; /* Make button round */
-    background-color: rgba(255, 255, 255, 0.1); /* Subtle background */
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
     border: none;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -107,30 +65,32 @@
     overflow: hidden;
   }
   
-  /* Ensure the image fully covers the button */
-  .send-icon img, .microphone-icon img {
-    width: 550%; /* Make the image fill most of the button */
-    height: 550%;
-    object-fit: contain; /* Prevent cropping */
+  /* Images fill the button */
+  .send-icon img,
+  .microphone-icon img {
+    width: 670%;
+    height: 670%;
+    object-fit: contain;
   }
   
-  /* Hover effect */
-  .send-icon:hover, .microphone-icon:hover {
+  /* Hover and click effects */
+  .send-icon:hover,
+  .microphone-icon:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
   }
   
-  /* Click effect */
-  .send-icon:active, .microphone-icon:active {
+  .send-icon:active,
+  .microphone-icon:active {
     transform: scale(0.95);
   }
   
-  /* Recording effect */
   .microphone-icon.recording {
     border: 3px solid yellow;
   }
   
-  .send-icon:disabled, .microphone-icon:disabled {
+  .send-icon:disabled,
+  .microphone-icon:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -143,4 +103,107 @@
     0% { opacity: 1; }
     50% { opacity: 0.5; }
     100% { opacity: 1; }
+  }
+  
+  textarea {
+    resize: none;
+    overflow: hidden;
+    width: 100%;
+    border-radius: 40px;
+    padding: 10px 15px;
+    background: #4a4a4a;
+    color: white;
+    font-size: 16px;
+    border: none;
+  }
+
+  @media (max-width: 500px) {
+
+    .toggle-container {
+      transform: scale(0.7);
+      margin-left: -15px;
+    }
+
+    textarea {
+      font-size: 14px;
+      flex-grow: 1;
+    }
+
+    .send-icon,
+    .microphone-icon {
+        width: 50px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    /* Images fill the button */
+    .send-icon img,
+    .microphone-icon img {
+        width: 1250%;
+        height: 1200%;
+        object-fit: contain;
+    }
+    
+    /* Hover and click effects */
+    .send-icon:hover,
+    .microphone-icon:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+    }
+    
+    .send-icon:active,
+    .microphone-icon:active {
+        transform: scale(0.95);
+    }
+    
+    .microphone-icon.recording {
+        border: 3px solid yellow;
+    }
+    
+    .send-icon:disabled,
+    .microphone-icon:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .send-icon.loading {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    textarea {
+        resize: none;
+        overflow: hidden;
+        width: 100%;
+        border-radius: 40px;
+        padding: 10px 15px;
+        background: #4a4a4a;
+        color: white;
+        font-size: 10px;
+        border: none;
+    }
+
+    input, textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 10px;
+        box-sizing: border-box;
+    }
+
   }
