@@ -5,7 +5,7 @@ function VideoPopup({ videoUrl, onClose }) {
   return (
     <div className="video-popup-overlay" onClick={onClose}>
       <div className="video-popup-container" onClick={(e) => e.stopPropagation()}>
-        <button className="close-button" onClick={onClose}>X</button>
+        <button className="close-button" onClick={onClose}>✕</button>
         <div className="video-popup-content">
           <iframe 
             width="560" 

@@ -1,4 +1,4 @@
-.contact-form-overlay {
+.thank-you-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -11,15 +11,15 @@
   z-index: 1000;
 }
 
-.contact-form-container {
-  position: relative;
+.thank-you-container {
   background-color: white;
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  width: 90%;
   max-width: 500px;
+  width: 90%;
+  text-align: center;
+  position: relative;
 }
 
 .close-button {
@@ -45,60 +45,48 @@
   color: #333;
 }
 
-@media (max-width: 768px) {
-  .close-button {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-  }
+.thank-you-content {
+  margin-top: 10px;
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 15px;
-}
-
-form h2 {
+.thank-you-content h2 {
   margin-bottom: 20px;
+  color: #28a745;
+  font-size: 28px;
+}
+
+.thank-you-content p {
+  margin-bottom: 30px;
+  font-size: 18px;
+  line-height: 1.5;
   color: #333;
 }
 
-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: #333;
-  text-align: left;
-}
-
-input, textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 16px;
-  box-sizing: border-box;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-button[type="submit"] {
-  width: 100%;
-  padding: 12px;
+.ok-button {
+  padding: 12px 30px;
   background-color: #28a745;
   color: white;
   border: none;
   border-radius: 5px;
   font-size: 16px;
   cursor: pointer;
-  margin-top: 20px;
+  transition: background-color 0.2s;
 }
 
-button[type="submit"]:hover {
+.ok-button:hover {
   background-color: #218838;
+}
+
+@media (max-width: 768px) {
+  .thank-you-container {
+    padding: 25px 20px;
+  }
+  
+  .thank-you-content h2 {
+    font-size: 24px;
+  }
+  
+  .thank-you-content p {
+    font-size: 16px;
+  }
 }
