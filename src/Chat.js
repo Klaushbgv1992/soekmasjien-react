@@ -13,6 +13,10 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
+  // Store conversation history for context
+  const [conversationHistory, setConversationHistory] = useState([
+    { role: 'system', content: 'You are a helpful assistant that responds in Afrikaans.' }
+  ]);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -50,20 +54,36 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
     setIsLoading(true);
     setMessages((prev) => [...prev, { text: userMessage, sender: 'user' }]);
 
+    // Add user message to conversation history
+    const updatedHistory = [
+      ...conversationHistory,
+      { role: 'user', content: userMessage }
+    ];
+    
+    // Keep only the last 8 messages (4 exchanges) plus the system message
+    const limitedHistory = updatedHistory.length > 9 
+      ? [updatedHistory[0], ...updatedHistory.slice(updatedHistory.length - 8)]
+      : updatedHistory;
+    
+    setConversationHistory(limitedHistory);
+
     try {
+      // Update system message based on isSnaaks state
+      const systemMessage = isSnaaks
+        ? 'Respond humorously in Afrikaans.'
+        : 'Respond only in Afrikaans.';
+      
+      // Update the system message in the history
+      const historyWithUpdatedSystem = [
+        { role: 'system', content: systemMessage },
+        ...limitedHistory.slice(1)
+      ];
+
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
           model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: isSnaaks
-                ? 'Respond humorously in Afrikaans.'
-                : 'Respond only in Afrikaans.'
-            },
-            { role: 'user', content: userMessage }
-          ],
+          messages: historyWithUpdatedSystem,
           max_tokens: 1500,
           temperature: 0.7
         },
@@ -78,7 +98,16 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
       const botResponse =
         response?.data?.choices?.[0]?.message?.content ||
         "Jammer, ek het nie 'n antwoord nie.";
+      
+      // Add bot response to messages for display
       setMessages((prev) => [...prev, { text: botResponse, sender: 'bot' }]);
+      
+      // Add bot response to conversation history
+      setConversationHistory([
+        ...historyWithUpdatedSystem,
+        { role: 'assistant', content: botResponse }
+      ]);
+      
       if (setHasError) setHasError(false);
     } catch (error) {
       console.error('Error fetching OpenAI response:', error);
@@ -234,8 +263,24 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
     }
   };
 
+  // Function to clear chat history
+  const clearChat = () => {
+    setMessages([
+      { text: "Hallo! Welkom by SoekmasjienKI. Hoe kan ek help?", sender: "system" }
+    ]);
+    setConversationHistory([
+      { role: 'system', content: 'You are a helpful assistant that responds in Afrikaans.' }
+    ]);
+  };
+
   return (
     <div className="chat-container">
+      <div className="chat-header">
+        <h2>SoekmasjienKI Chat</h2>
+        <button className="clear-chat-button" onClick={clearChat} aria-label="Clear chat">
+          <span>Nuwe Gesprek</span>
+        </button>
+      </div>
       <div className="chat-messages">
         {messages.map((msg, index) => (
           <div key={index} className={`message ${msg.sender}`}>{msg.text}</div>
