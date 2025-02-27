@@ -11,9 +11,13 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const textareaRef = useRef(null);
+  const chatInputRef = useRef(null);
 
   useEffect(() => {
     // Keep the welcome message intact
@@ -21,6 +25,22 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
       if (prev.length === 1) return prev;
       return [{ text: "Hallo! Welkom by SoekmasjienKI. Hoe kan ek help?", sender: "system" }];
     });
+    
+    // Check if device is mobile
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 500);
+    };
+    
+    // Initial check
+    checkIfMobile();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIfMobile);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
   }, []);
 
   const handleSend = async (message) => {
@@ -70,7 +90,9 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
     } finally {
       setIsLoading(false);
       setInput('');
-      document.querySelector('textarea').style.height = 'auto';
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     }
   };
 
@@ -85,6 +107,20 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
     setInput(e.target.value);
     e.target.style.height = 'auto';
     e.target.style.height = e.target.scrollHeight + 'px';
+  };
+  
+  const handleTextareaFocus = () => {
+    setIsTextareaFocused(true);
+    if (isMobile && chatInputRef.current) {
+      chatInputRef.current.classList.add('textarea-focused');
+    }
+  };
+  
+  const handleTextareaBlur = () => {
+    setIsTextareaFocused(false);
+    if (isMobile && chatInputRef.current) {
+      chatInputRef.current.classList.remove('textarea-focused');
+    }
   };
 
   // Convert blob to base64 (strip out "data:audio/webm;base64," prefix)
@@ -205,12 +241,15 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
           <div key={index} className={`message ${msg.sender}`}>{msg.text}</div>
         ))}
       </div>
-      <div className="chat-input">
+      <div className={`chat-input ${isTextareaFocused && isMobile ? 'textarea-focused' : ''}`} ref={chatInputRef}>
         <textarea
+          ref={textareaRef}
           placeholder="Vra Soekmasjien..."
           value={input}
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
+          onFocus={handleTextareaFocus}
+          onBlur={handleTextareaBlur}
           disabled={isLoading}
           style={{ resize: 'none', overflow: 'hidden' }}
         />

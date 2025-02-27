@@ -4,34 +4,49 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .video-popup-container {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  max-width: 600px;
-  width: 100%;
+  background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+  border-radius: 15px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  max-width: 800px;
+  width: 90%;
   text-align: center;
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  animation: scaleIn 0.4s ease;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .close-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  background-color: #f0f0f0;
+  top: 15px;
+  right: 15px;
+  width: 36px;
+  height: 36px;
+  background-color: rgba(255, 255, 255, 0.15);
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -39,32 +54,69 @@
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  color: #666;
-  transition: all 0.2s ease;
+  color: white;
+  transition: all 0.3s ease;
   z-index: 10;
 }
 
 .close-button:hover {
-  background-color: #e0e0e0;
-  color: #333;
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
 }
 
 @media (max-width: 768px) {
+  .video-popup-container {
+    width: 95%;
+  }
+  
   .close-button {
     width: 40px;
     height: 40px;
     font-size: 20px;
+    top: 10px;
+    right: 10px;
   }
 }
 
 .video-popup-content {
   width: 100%;
-  max-width: 560px;
-  padding: 20px;
+  max-width: 800px;
+  padding: 0;
+  position: relative;
+  aspect-ratio: 16/9;
 }
 
 iframe {
   width: 100%;
-  height: 315px; /* Increase height for better viewing */
-  border-radius: 5px;
+  height: 100%;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  z-index: 5;
+}
+
+@keyframes spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.video-hidden {
+  opacity: 0;
+}
+
+.video-visible {
+  opacity: 1;
+  transition: opacity 0.5s ease;
 }
