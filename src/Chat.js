@@ -165,6 +165,22 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
     });
 
   const toggleRecording = async () => {
+    // Check if running on iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    console.log("Browser detection - iOS:", isIOS);
+    
+    // For iOS devices, show a direct message about limitations
+    if (isIOS) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: "Spraakopname werk nie op iOS Safari nie. Apple se beperkings verhoed dat hierdie funksie werk. Gebruik asseblief die teksinvoer of 'n ander blaaier soos Chrome.",
+          sender: 'bot'
+        }
+      ]);
+      return;
+    }
+    
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       console.error('Microphone access not supported in this browser.');
       setMessages((prev) => [
@@ -178,18 +194,15 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
       return;
     }
 
-    // Check if running on iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    
     // Check if MediaRecorder is supported
     const isMediaRecorderSupported = typeof MediaRecorder !== 'undefined';
+    console.log("MediaRecorder supported:", isMediaRecorderSupported);
     
-    // If on iOS Safari and MediaRecorder isn't well supported, show a message
-    if (isIOS && (!isMediaRecorderSupported || !MediaRecorder.isTypeSupported)) {
+    if (!isMediaRecorderSupported) {
       setMessages((prev) => [
         ...prev,
         {
-          text: "Jammer, spraakopname word nie goed ondersteun in Safari op iOS nie. Probeer asseblief 'n ander blaaier soos Chrome of gebruik die teksinvoer.",
+          text: "Jammer, spraakopname word nie ondersteun in hierdie blaaier nie. Gebruik asseblief die teksinvoer.",
           sender: 'bot'
         }
       ]);
@@ -204,26 +217,26 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
       try {
         // Get audio stream
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("Audio stream obtained successfully");
         
         // Determine supported MIME types
         let options = {};
-        let mimeType = 'audio/webm';
+        let mimeType = '';
         
-        // For iOS Safari, use different approach
-        if (isIOS) {
-          // iOS Safari doesn't support WebM, try MP4 container
-          if (MediaRecorder.isTypeSupported('audio/mp4')) {
-            mimeType = 'audio/mp4';
-          } else {
-            // Fallback to default with no specified MIME type on iOS
-            mimeType = '';
-          }
-        } else {
-          // For other browsers, prefer WebM with Opus codec
-          if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-            mimeType = 'audio/webm;codecs=opus';
-          } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-            mimeType = 'audio/webm';
+        // Check for supported formats
+        const supportedTypes = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/ogg;codecs=opus',
+          'audio/mp4',
+          ''  // empty string = browser default
+        ];
+        
+        for (const type of supportedTypes) {
+          if (!type || (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type))) {
+            mimeType = type;
+            console.log(`Selected MIME type: ${mimeType || 'browser default'}`);
+            break;
           }
         }
         
@@ -232,23 +245,43 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
           options = { mimeType };
         }
         
-        console.log(`Using audio format: ${mimeType || 'browser default'}`);
-        
         // Create MediaRecorder with appropriate options
         const mediaRecorder = new MediaRecorder(stream, options);
+        console.log("MediaRecorder created with options:", options);
         audioChunksRef.current = [];
 
         mediaRecorder.ondataavailable = (event) => {
+          console.log("Data available event, size:", event.data.size);
           if (event.data.size > 0) {
             audioChunksRef.current.push(event.data);
           }
         };
 
+        mediaRecorder.onerror = (event) => {
+          console.error("MediaRecorder error:", event);
+          setMessages((prev) => [
+            ...prev,
+            { text: "Fout met opname. Probeer asseblief weer.", sender: 'bot' }
+          ]);
+          setIsRecording(false);
+          stream.getTracks().forEach(track => track.stop());
+        };
+
         mediaRecorder.onstop = async () => {
           try {
+            console.log("Recording stopped, chunks:", audioChunksRef.current.length);
+            if (audioChunksRef.current.length === 0) {
+              throw new Error('No audio data recorded');
+            }
+            
             // Determine the correct MIME type for the Blob
             const blobMimeType = mimeType || 'audio/webm';
             const audioBlob = new Blob(audioChunksRef.current, { type: blobMimeType });
+            console.log("Audio blob created, size:", audioBlob.size);
+            
+            if (audioBlob.size < 100) {
+              throw new Error('Audio recording too short or empty');
+            }
             
             // Add loading message
             const loadingMsgIndex = messages.length;
@@ -259,11 +292,14 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
 
             // Convert recorded audio to base64
             const audioContent = await blobToBase64(audioBlob);
+            console.log("Audio converted to base64, length:", audioContent.length);
             
             // Determine the correct encoding parameter for Google Speech API
             let encoding = 'WEBM_OPUS';
-            if (isIOS) {
-              encoding = 'MP4';  // For iOS
+            if (mimeType.includes('mp4')) {
+              encoding = 'MP4';
+            } else if (mimeType.includes('ogg')) {
+              encoding = 'OGG_OPUS';
             }
             
             console.log(`Using Speech API encoding: ${encoding}`);
@@ -281,6 +317,7 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
               }
             };
 
+            console.log("Sending request to Google Speech API");
             const googleResponse = await axios.post(
               `https://speech.googleapis.com/v1/speech:recognize?key=${process.env.REACT_APP_GOOGLE_SPEECH_API_KEY}`,
               payload,
@@ -288,6 +325,8 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
                 headers: { 'Content-Type': 'application/json' }
               }
             );
+            
+            console.log("Google Speech API response:", googleResponse.data);
 
             // Remove the loading message
             setMessages((prev) => prev.filter((_, index) => index !== loadingMsgIndex));
@@ -296,8 +335,10 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
               googleResponse?.data?.results?.[0]?.alternatives?.[0]?.transcript;
 
             if (transcription) {
+              console.log("Transcription successful:", transcription);
               handleSend(transcription);
             } else {
+              console.error("No transcription in response");
               throw new Error('Geen geldige transkripsie ontvang nie.');
             }
           } catch (transcriptionError) {
@@ -317,7 +358,10 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
         };
 
         mediaRecorderRef.current = mediaRecorder;
-        mediaRecorder.start();
+        
+        // Request data every second to handle short recordings better
+        mediaRecorder.start(1000);
+        console.log("MediaRecorder started");
         setIsRecording(true);
       } catch (error) {
         console.error('Recording error:', error);
