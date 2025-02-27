@@ -178,15 +178,63 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
       return;
     }
 
+    // Check if running on iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
+    // Check if MediaRecorder is supported
+    const isMediaRecorderSupported = typeof MediaRecorder !== 'undefined';
+    
+    // If on iOS Safari and MediaRecorder isn't well supported, show a message
+    if (isIOS && (!isMediaRecorderSupported || !MediaRecorder.isTypeSupported)) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: "Jammer, spraakopname word nie goed ondersteun in Safari op iOS nie. Probeer asseblief 'n ander blaaier soos Chrome of gebruik die teksinvoer.",
+          sender: 'bot'
+        }
+      ]);
+      return;
+    }
+    
     if (isRecording) {
       // Stop recording
       mediaRecorderRef.current?.stop();
       setIsRecording(false);
     } else {
       try {
-        // Explicitly ask for Opus in WebM container
+        // Get audio stream
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const options = { mimeType: 'audio/webm; codecs=opus' };
+        
+        // Determine supported MIME types
+        let options = {};
+        let mimeType = 'audio/webm';
+        
+        // For iOS Safari, use different approach
+        if (isIOS) {
+          // iOS Safari doesn't support WebM, try MP4 container
+          if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            mimeType = 'audio/mp4';
+          } else {
+            // Fallback to default with no specified MIME type on iOS
+            mimeType = '';
+          }
+        } else {
+          // For other browsers, prefer WebM with Opus codec
+          if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+            mimeType = 'audio/webm;codecs=opus';
+          } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+            mimeType = 'audio/webm';
+          }
+        }
+        
+        // Set options if we have a valid mime type
+        if (mimeType) {
+          options = { mimeType };
+        }
+        
+        console.log(`Using audio format: ${mimeType || 'browser default'}`);
+        
+        // Create MediaRecorder with appropriate options
         const mediaRecorder = new MediaRecorder(stream, options);
         audioChunksRef.current = [];
 
@@ -197,19 +245,36 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
         };
 
         mediaRecorder.onstop = async () => {
-          const audioBlob = new Blob(audioChunksRef.current, {
-            type: 'audio/webm; codecs=opus'
-          });
-
           try {
-            // Convert recorded WebM/Opus to base64
-            const audioContent = await blobToBase64(audioBlob);
+            // Determine the correct MIME type for the Blob
+            const blobMimeType = mimeType || 'audio/webm';
+            const audioBlob = new Blob(audioChunksRef.current, { type: blobMimeType });
+            
+            // Add loading message
+            const loadingMsgIndex = messages.length;
+            setMessages((prev) => [
+              ...prev,
+              { text: "Besig om jou spraak te verwerk...", sender: 'bot' }
+            ]);
 
-            // Google Speech-to-Text config for WebM Opus
+            // Convert recorded audio to base64
+            const audioContent = await blobToBase64(audioBlob);
+            
+            // Determine the correct encoding parameter for Google Speech API
+            let encoding = 'WEBM_OPUS';
+            if (isIOS) {
+              encoding = 'MP4';  // For iOS
+            }
+            
+            console.log(`Using Speech API encoding: ${encoding}`);
+
+            // Google Speech-to-Text config
             const payload = {
               config: {
-                encoding: 'WEBM_OPUS', // <--- Important
-                languageCode: 'af-ZA'  // Afrikaans
+                encoding: encoding,
+                languageCode: 'af-ZA',  // Afrikaans
+                model: 'default',
+                sampleRateHertz: 48000,  // Common sample rate
               },
               audio: {
                 content: audioContent
@@ -224,6 +289,9 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
               }
             );
 
+            // Remove the loading message
+            setMessages((prev) => prev.filter((_, index) => index !== loadingMsgIndex));
+
             const transcription =
               googleResponse?.data?.results?.[0]?.alternatives?.[0]?.transcript;
 
@@ -237,7 +305,7 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
             setMessages((prev) => [
               ...prev,
               {
-                text: "Jammer, ek kon nie jou spraak herken nie. Probeer weer.",
+                text: "Jammer, ek kon nie jou spraak herken nie. Probeer weer of gebruik die teksinvoer.",
                 sender: 'bot'
               }
             ]);
@@ -255,7 +323,7 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
         console.error('Recording error:', error);
         setMessages((prev) => [
           ...prev,
-          { text: "Jammer, ek kon nie toegang kry tot jou mikrofoon nie.", sender: 'bot' }
+          { text: "Jammer, ek kon nie toegang kry tot jou mikrofoon nie. Maak seker dat jy toestemming gegee het vir mikrofoongebruik.", sender: 'bot' }
         ]);
         if (setHasError) setHasError(true);
         setIsRecording(false);
