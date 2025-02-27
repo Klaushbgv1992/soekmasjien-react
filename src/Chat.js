@@ -4,6 +4,15 @@ import soekIcon from './assets/soek.ico';
 import microphoneIcon from './assets/microphone.png';
 import './Chat.css';
 
+// Preload images to ensure they're available immediately
+const preloadImages = () => {
+  const soekImg = new Image();
+  soekImg.src = soekIcon;
+  
+  const micImg = new Image();
+  micImg.src = microphoneIcon;
+};
+
 const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
   const [messages, setMessages] = useState([
     { text: "Hallo! Welkom by SoekmasjienKI. Hoe kan ek help?", sender: "system" }
@@ -24,27 +33,23 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
   const chatInputRef = useRef(null);
 
   useEffect(() => {
+    // Preload images
+    preloadImages();
+    
     // Keep the welcome message intact
     setMessages((prev) => {
       if (prev.length === 1) return prev;
       return [{ text: "Hallo! Welkom by SoekmasjienKI. Hoe kan ek help?", sender: "system" }];
     });
-    
-    // Check if device is mobile
+  }, []);
+
+  useEffect(() => {
     const checkIfMobile = () => {
-      setIsMobile(window.innerWidth <= 500);
+      setIsMobile(window.innerWidth <= 768);
     };
-    
-    // Initial check
     checkIfMobile();
-    
-    // Add event listener for window resize
     window.addEventListener('resize', checkIfMobile);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('resize', checkIfMobile);
-    };
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
   const handleSend = async (message) => {
@@ -439,5 +444,7 @@ const Chat = ({ setHasError, isSnaaks, setIsSnaaks }) => {
     </div>
   );
 };
+
+preloadImages();
 
 export default Chat;

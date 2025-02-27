@@ -308,15 +308,15 @@
 
     .send-icon,
     .microphone-icon {
-        width: 45px;
-        height: 45px;
+      width: 50px;
+      height: 50px;
     }
     
     /* Images fill the button */
     .send-icon img,
     .microphone-icon img {
-        width: 1000%;
-        height: 1000%;
+        width: 600%;
+        height: 600%;
     }
     
     .message {
